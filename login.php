@@ -94,6 +94,13 @@ $conn->close();
             font-weight: 600;
             letter-spacing: 0.5px;
         }
+
+        .login-header h2 {
+            color: #333;
+            font-size: 20px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
         
         .form-group {
             margin-bottom: 20px;
@@ -178,7 +185,7 @@ $conn->close();
 <body>
     <div class = "login-class">
         <div class = "login-header">
-            <h1>Pengelolaan Karya Ilmiah Remaja</h1>
+            <h1>Karya Ilmiah Remaja</h1>
             <h2>SMKN 1 Pacitan</h2>
         </div>
 
@@ -193,12 +200,12 @@ $conn->close();
         <form method = "POST" action = "">
             <div class = "form-group">
                 <label for = "username">Username</label>
-                <input type = "text" id = "username" name = "username" placeholder = "Masukkan Username Anda!" required>
+                <input type = "text" id = "username" name = "username" placeholder = "Masukkan Username Anda" required>
             </div>
 
             <div class = "form-group">
                 <label for = "password">Password</label>
-                <input id = "password" name = "password" placeholder = "Masukkan Password Anda!" required>
+                <input type = "password" id = "password" name = "password" placeholder = "Masukkan Password Anda" required>
             </div>
 
             <button type = "submit" class = "login-button">Masuk</button>
