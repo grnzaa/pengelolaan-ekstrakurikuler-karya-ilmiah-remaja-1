@@ -201,7 +201,7 @@ $conn->close();
                 <input id = "password" name = "password" placeholder = "Masukkan Password Anda!" required>
             </div>
 
-            <button type = "submit" class = "login button">Masuk</button>
+            <button type = "submit" class = "login-button">Masuk</button>
         </form>
 
         <div class = "login-footer">
