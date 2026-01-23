@@ -4,7 +4,7 @@ session_start();
 $host = "localhost";
 $username = "root";
 $password = "";
-$database = "";
+$database = "aplikasi_pengelolaan_ekstrakurikuler_kir_esensial";
 
 $conn = new mysqli($host, $username, $password, $database);
 
