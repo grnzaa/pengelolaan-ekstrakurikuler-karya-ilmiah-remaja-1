@@ -234,94 +234,213 @@ $projects = getUniqueProyek($conn);
             box-sizing: border-box;
         }
         
+        @keyframes blurShift {
+            0%, 100% { filter: blur(80px); }
+            50% { filter: blur(120px); }
+        }
+
+        @keyframes floatAnimation {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes glassHover {
+            0% {
+                background: rgba(255, 255, 255, 0.15);
+                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            }
+            50% {
+                background: rgba(255, 255, 255, 0.25);
+                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.25);
+            }
+            100% {
+                background: rgba(255, 255, 255, 0.2);
+                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+            }
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background-attachment: fixed;
+            color: #333;
         }
         
         .dashboard-container {
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-container::before {
+            content: '';
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
+            border-radius: 50%;
+            top: -100px;
+            left: -100px;
+            animation: floatAnimation 6s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .dashboard-container::after {
+            content: '';
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(118, 75, 162, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            bottom: -150px;
+            right: -150px;
+            animation: floatAnimation 8s ease-in-out infinite reverse;
+            pointer-events: none;
+            z-index: 0;
         }
         
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             color: white;
             padding: 30px 40px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1.5px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 8px 40px rgba(102, 126, 234, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            animation: slideInDown 0.6s ease-out;
+            position: relative;
+            z-index: 10;
         }
         
         .header h1 {
-            font-size: 36px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.8px;
+            text-shadow: 0 8px 20px rgba(0, 0, 0, 0.25), 0 0 30px rgba(102, 126, 234, 0.3);
+            color: white;
         }
         
         .header-info {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-top: 15px;
+            gap: 30px;
         }
         
         .user-info {
             font-size: 14px;
+            font-weight: 500;
+            text-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
         }
         
         .logout-btn {
-            background-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             color: white;
             padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
             cursor: pointer;
             font-size: 14px;
-            transition: all 0.3s ease;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
             text-decoration: none;
             display: inline-block;
         }
         
         .logout-btn:hover {
-            background-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 24px 0 rgba(31, 38, 135, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .logout-btn:active {
+            transform: translateY(0);
         }
         
         .nav-bar {
-            background-color: white;
-            border-bottom: 2px solid #ddd;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             display: flex;
             gap: 0;
             padding: 0 40px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 9;
         }
         
         .nav-item {
-            padding: 15px 25px;
+            padding: 16px 25px;
             cursor: pointer;
             border: none;
             background: none;
-            font-size: 16px;
-            font-weight: 500;
-            color: #666;
+            font-size: 15px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
             border-bottom: 3px solid transparent;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         }
         
         .nav-item:hover {
-            color: #667eea;
+            color: rgba(255, 255, 255, 0.95);
+            transform: translateY(-1px);
+            text-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
         }
         
         .nav-item.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
+            color: white;
+            border-bottom-color: rgba(255, 255, 255, 0.6);
+            text-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
         }
         
         .main-content {
             flex: 1;
             padding: 40px;
+            position: relative;
+            z-index: 5;
+            overflow-y: auto;
         }
         
         .content-section {
             display: none;
+            animation: slideInUp 0.5s ease-out;
         }
         
         .content-section.active {
@@ -337,32 +456,44 @@ $projects = getUniqueProyek($conn);
         
         .section-title {
             font-size: 28px;
-            font-weight: 600;
-            color: #333;
+            font-weight: 700;
+            color: rgba(0, 0, 0, 0.8);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
         
         .add-btn {
-            background-color: #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             color: white;
             padding: 12px 25px;
-            border: none;
-            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
             cursor: pointer;
             font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            font-weight: 700;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.25);
         }
         
         .add-btn:hover {
-            background-color: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.35);
+            border-color: rgba(255, 255, 255, 0.3);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 1) 0%, rgba(118, 75, 162, 1) 100%);
+        }
+
+        .add-btn:active {
+            transform: translateY(-1px);
         }
         
         .table-wrapper {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.12);
             overflow: hidden;
         }
         
@@ -372,27 +503,33 @@ $projects = getUniqueProyek($conn);
         }
         
         thead {
-            background-color: #f8f9fa;
-            border-bottom: 2px solid #ddd;
+            background: rgba(102, 126, 234, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         th {
-            padding: 15px;
+            padding: 16px 18px;
             text-align: left;
-            font-weight: 600;
-            color: #555;
-            font-size: 14px;
+            font-weight: 700;
+            color: rgba(0, 0, 0, 0.8);
+            font-size: 13px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
         
         td {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            color: #333;
+            padding: 16px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(0, 0, 0, 0.7);
             font-size: 14px;
         }
         
+        tbody tr {
+            transition: all 0.3s ease;
+        }
+
         tbody tr:hover {
-            background-color: #f8f9fa;
+            background-color: rgba(102, 126, 234, 0.08);
         }
         
         .action-buttons {
@@ -403,31 +540,51 @@ $projects = getUniqueProyek($conn);
         .edit-btn, .delete-btn {
             padding: 8px 15px;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            font-size: 12px;
+            font-weight: 700;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
         }
         
         .edit-btn {
-            background-color: #28a745;
-            color: white;
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+            border: 1px solid rgba(40, 167, 69, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
         
         .edit-btn:hover {
-            background-color: #218838;
+            background: rgba(40, 167, 69, 0.3);
+            border-color: rgba(40, 167, 69, 0.5);
             transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(40, 167, 69, 0.25);
+            color: #1e7e34;
+        }
+
+        .edit-btn:active {
+            transform: translateY(0);
         }
         
         .delete-btn {
-            background-color: #dc3545;
-            color: white;
+            background: rgba(220, 53, 69, 0.2);
+            color: #dc3545;
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
         
         .delete-btn:hover {
-            background-color: #c82333;
+            background: rgba(220, 53, 69, 0.3);
+            border-color: rgba(220, 53, 69, 0.5);
             transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(220, 53, 69, 0.25);
+            color: #bd2130;
+        }
+
+        .delete-btn:active {
+            transform: translateY(0);
         }
         
         .modal {
@@ -438,7 +595,9 @@ $projects = getUniqueProyek($conn);
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
             animation: fadeIn 0.3s ease;
         }
         
@@ -458,13 +617,16 @@ $projects = getUniqueProyek($conn);
         }
         
         .modal-content {
-            background-color: white;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 60px rgba(31, 38, 135, 0.2);
             width: 90%;
             max-width: 500px;
-            animation: slideUp 0.3s ease;
+            animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         
         @keyframes slideUp {
@@ -483,13 +645,15 @@ $projects = getUniqueProyek($conn);
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            border-bottom: 2px solid #eee;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             padding-bottom: 15px;
         }
         
         .modal-header h2 {
-            font-size: 24px;
-            color: #333;
+            font-size: 22px;
+            color: #ffffff;
+            font-weight: 700;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
         
         .close-btn {
@@ -497,12 +661,20 @@ $projects = getUniqueProyek($conn);
             border: none;
             font-size: 28px;
             cursor: pointer;
-            color: #999;
-            transition: color 0.3s ease;
+            color: rgba(255, 255, 255, 0.6);
+            transition: all 0.3s ease;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .close-btn:hover {
-            color: #333;
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
         }
         
         .form-group {
@@ -511,27 +683,40 @@ $projects = getUniqueProyek($conn);
         
         .form-group label {
             display: block;
-            color: #555;
-            font-weight: 500;
+            color: #ffffff;
+            font-weight: 600;
             margin-bottom: 8px;
-            font-size: 14px;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
         
         .form-group input,
         .form-group select {
             width: 100%;
             padding: 12px 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
             font-size: 14px;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #ffffff;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
         }
         
         .form-group input:focus,
         .form-group select:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: rgba(102, 126, 234, 0.6);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
         }
         
         .modal-footer {
@@ -542,37 +727,54 @@ $projects = getUniqueProyek($conn);
         }
         
         .btn-submit {
-            background-color: #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             color: white;
             padding: 12px 25px;
-            border: none;
-            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
             cursor: pointer;
             font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            font-weight: 700;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.25);
         }
         
         .btn-submit:hover {
-            background-color: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.35);
+            border-color: rgba(255, 255, 255, 0.3);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 1) 0%, rgba(118, 75, 162, 1) 100%);
+        }
+
+        .btn-submit:active {
+            transform: translateY(-1px);
         }
         
         .btn-cancel {
-            background-color: #6c757d;
-            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #ffffff;
             padding: 12px 25px;
-            border: none;
-            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
             cursor: pointer;
             font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            font-weight: 700;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
         }
         
         .btn-cancel:hover {
-            background-color: #5a6268;
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            color: #ffffff;
+        }
+
+        .btn-cancel:active {
+            transform: translateY(0);
         }
         
         .confirm-modal {
@@ -583,7 +785,9 @@ $projects = getUniqueProyek($conn);
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
             animation: fadeIn 0.3s ease;
         }
         
@@ -594,26 +798,33 @@ $projects = getUniqueProyek($conn);
         }
         
         .confirm-modal-content {
-            background-color: white;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 60px rgba(31, 38, 135, 0.2);
             width: 90%;
             max-width: 400px;
-            animation: slideUp 0.3s ease;
+            animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         
         .confirm-modal-header h2 {
             font-size: 20px;
-            color: #333;
+            color: #ffffff;
             margin-bottom: 15px;
+            font-weight: 700;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
         
         .confirm-modal-body {
-            color: #666;
+            color: #ffffff;
             font-size: 14px;
             margin-bottom: 25px;
             line-height: 1.6;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            font-weight: 500;
         }
         
         .confirm-modal-footer {
@@ -623,43 +834,66 @@ $projects = getUniqueProyek($conn);
         }
         
         .btn-confirm {
-            background-color: #dc3545;
+            background: rgba(220, 53, 69, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             color: white;
             padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
             cursor: pointer;
             font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            font-weight: 700;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+            box-shadow: 0 8px 24px rgba(220, 53, 69, 0.2);
         }
         
         .btn-confirm:hover {
-            background-color: #c82333;
+            background: rgba(220, 53, 69, 1);
+            box-shadow: 0 12px 32px rgba(220, 53, 69, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn-confirm:active {
+            transform: translateY(0);
         }
         
         .btn-cancel-confirm {
-            background-color: #6c757d;
-            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: rgba(0, 0, 0, 0.7);
             padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
             cursor: pointer;
             font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            font-weight: 700;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
         }
         
         .btn-cancel-confirm:hover {
-            background-color: #5a6268;
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            color: rgba(0, 0, 0, 0.8);
+        }
+
+        .btn-cancel-confirm:active {
+            transform: translateY(0);
         }
         
         .alert {
-            padding: 15px;
+            padding: 15px 18px;
             margin-bottom: 20px;
-            border-radius: 5px;
+            border-radius: 12px;
             font-size: 14px;
             display: none;
+            font-weight: 600;
+            border: 1px solid;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            animation: slideInDown 0.4s ease-out;
         }
         
         .alert.show {
@@ -667,19 +901,19 @@ $projects = getUniqueProyek($conn);
         }
         
         .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background: rgba(52, 211, 153, 0.15);
+            color: #059669;
+            border-color: rgba(52, 211, 153, 0.3);
         }
         
         .alert-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background: rgba(239, 68, 68, 0.15);
+            color: #dc2626;
+            border-color: rgba(239, 68, 68, 0.3);
         }
         
         .expanded-row {
-            background-color: #f8f9fa;
+            background-color: rgba(102, 126, 234, 0.05);
         }
         
         .expand-btn {
@@ -687,9 +921,13 @@ $projects = getUniqueProyek($conn);
             border: none;
             cursor: pointer;
             font-size: 18px;
-            color: #667eea;
+            color: rgba(102, 126, 234, 0.7);
             padding: 0 10px;
-            transition: transform 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+        }
+
+        .expand-btn:hover {
+            color: rgba(102, 126, 234, 1);
         }
         
         .expand-btn.open {
@@ -956,7 +1194,7 @@ $projects = getUniqueProyek($conn);
             </div>
             <div class="confirm-modal-body">
                 <p>Apakah Anda yakin ingin menghapus <strong id="deleteItemName"></strong>?</p>
-                <p style="color: #999; font-size: 12px; margin-top: 10px;">Tindakan ini tidak dapat dibatalkan.</p>
+                <p style="color: #ffffff; font-size: 12px; margin-top: 10px;">Tindakan ini tidak dapat dibatalkan.</p>
             </div>
             <div class="confirm-modal-footer">
                 <button class="btn-cancel-confirm" onclick="closeDeleteConfirm()">Batal</button>
