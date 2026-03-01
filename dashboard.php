@@ -52,12 +52,69 @@ function getUniqueProyek($conn) {
     return $result->fetch_all(MYSQLI_ASSOC);
 }
 
+function getPembina($conn) {
+    $sql = "SELECT * FROM coach";
+    $result = $conn->query($sql);
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
+
+function getPembinaWithPeriod($conn) {
+    $sql = "SELECT 
+            c.coach_id, 
+            c.coach_name, 
+            p.period_id, 
+            p.enrollment_year
+            FROM coach c
+            LEFT JOIN period p ON c.coach_id = p.coach_id
+            ORDER BY c.coach_id, p.enrollment_year DESC";
+    $result = $conn->query($sql);
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
+
+function getPengurus($conn) {
+    $sql = "SELECT 
+            s.supervisor_id,
+            s.position_id,
+            s.period_id,
+            s.member_id,
+            m.name,
+            p.serving_as,
+            per.enrollment_year
+            FROM supervisor s
+            JOIN position p ON s.position_id = p.position_id
+            JOIN member m ON s.member_id = m.member_id
+            LEFT JOIN period per ON s.period_id = per.period_id
+            ORDER BY per.enrollment_year DESC, s.period_id DESC, p.serving_as";
+    $result = $conn->query($sql);
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
+
+function getPositions($conn) {
+    $sql = "SELECT * FROM position ORDER BY position_id";
+    $result = $conn->query($sql);
+    return $result->fetch_all(MYSQLI_ASSOC);
+}
+
+function mapServingAs($key) {
+    $map = [
+        'ceo' => 'Ketua',
+        'co-ceo' => 'Wakil Ketua',
+        'secretary 1' => 'Sekretaris 1',
+        'secretary 2' => 'Sekretaris 2',
+        'treasurer 1' => 'Bendahara 1',
+        'treasurer 2' => 'Bendahara 2',
+    ];
+
+    return isset($map[$key]) ? $map[$key] : ucfirst($key);
+}
+
 function getMembersByProject($conn, $project_id) {
     $sql = "SELECT 
             m.member_id, 
             m.name, 
             m.class, 
-            m.enrollment_date
+            m.enrollment_date,
+            p.status as member_status
             FROM project p
             JOIN member m ON p.member_id = m.member_id
             WHERE p.project_id = ?
@@ -134,24 +191,79 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "add_project") {
-    $project_date = $_POST["project_date"];
-    $project_name = $_POST["project_name"];
-    $status = $_POST["status"];
-    $member_id = $_POST["member_id"];
+    ob_clean();
+    $response = ["status" => "error", "message" => "Terjadi kesalahan"];
     
-    $sql = "INSERT INTO project (project_date, project_name, status, member_id) VALUES (?, ?, ?, ?)";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssi", $project_date, $project_name, $status, $member_id);
-    
-    if ($stmt->execute()) {
+    try {
+        $project_date = $_POST["project_date"] ?? null;
+        $project_name = $_POST["project_name"] ?? null;
+        
+        if (!$project_date || !$project_name) {
+            throw new Exception("Data proyek tidak lengkap");
+        }
+        
+        // Get all members
+        $members_sql = "SELECT member_id FROM member ORDER BY member_id";
+        $members_result = $conn->query($members_sql);
+        
+        if (!$members_result) {
+            throw new Exception("Gagal mengambil data anggota");
+        }
+        
+        $members_array = [];
+        while ($member_row = $members_result->fetch_assoc()) {
+            $members_array[] = $member_row['member_id'];
+        }
+        
+        if (empty($members_array)) {
+            throw new Exception("Belum ada data anggota. Tambahkan anggota terlebih dahulu.");
+        }
+        
+        // Insert first member to get the project_id
+        $insert_member_sql = "INSERT INTO project (project_date, project_name, member_id, status) VALUES (?, ?, ?, 0)";
+        $insert_member_stmt = $conn->prepare($insert_member_sql);
+        
+        if (!$insert_member_stmt) {
+            throw new Exception("Prepare error di insert member");
+        }
+        
+        $insert_member_stmt->bind_param("ssi", $project_date, $project_name, $members_array[0]);
+        
+        if (!$insert_member_stmt->execute()) {
+            throw new Exception("Gagal membuat proyek");
+        }
+        
+        $project_id = $insert_member_stmt->insert_id;
+        $insert_member_stmt->close();
+        
+        // Insert remaining members
+        for ($i = 1; $i < count($members_array); $i++) {
+            $member_id = $members_array[$i];
+            $insert_rest_sql = "INSERT INTO project (project_id, project_date, project_name, member_id, status) VALUES (?, ?, ?, ?, 0)";
+            $insert_rest_stmt = $conn->prepare($insert_rest_sql);
+            
+            if (!$insert_rest_stmt) {
+                throw new Exception("Prepare error di insert member ke-" . ($i + 1));
+            }
+            
+            $insert_rest_stmt->bind_param("issi", $project_id, $project_date, $project_name, $member_id);
+            
+            if (!$insert_rest_stmt->execute()) {
+                throw new Exception("Gagal insert member ke-" . ($i + 1));
+            }
+            $insert_rest_stmt->close();
+        }
+        
         $response = ["status" => "success", "message" => "Proyek berhasil ditambahkan"];
-    } else {
-        $response = ["status" => "error", "message" => "Gagal menambah proyek"];
+        
+    } catch (Exception $e) {
+        $response = ["status" => "error", "message" => $e->getMessage()];
     }
-    $stmt->close();
     
-    header('Content-Type: application/json');
-    echo json_encode($response);
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-cache, no-store, must-revalidate');
+    http_response_code(200);
+    echo json_encode($response, JSON_UNESCAPED_UNICODE);
     exit();
 }
 
@@ -159,12 +271,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     $project_id = $_POST["project_id"];
     $project_date = $_POST["project_date"];
     $project_name = $_POST["project_name"];
-    $status = $_POST["status"];
-    $member_id = $_POST["member_id"];
-    
-    $sql = "UPDATE project SET project_date = ?, project_name = ?, status = ?, member_id = ? WHERE project_id = ?";
+
+    // Update all rows with this project_id to keep data in sync across all members
+    $sql = "UPDATE project SET project_date = ?, project_name = ? WHERE project_id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssii", $project_date, $project_name, $status, $member_id, $project_id);
+    $stmt->bind_param("ssi", $project_date, $project_name, $project_id);
     
     if ($stmt->execute()) {
         $response = ["status" => "success", "message" => "Proyek berhasil diperbarui"];
@@ -197,6 +308,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     exit();
 }
 
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "set_member_status") {
+    $project_id = $_POST["project_id"];
+    $member_id = $_POST["member_id"];
+    $status = isset($_POST["status"]) ? (int)$_POST["status"] : 0;
+
+    $sql = "UPDATE project SET status = ? WHERE project_id = ? AND member_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("iii", $status, $project_id, $member_id);
+
+    if ($stmt->execute()) {
+        $response = ["status" => "success", "message" => "Status anggota diperbarui"];
+    } else {
+        $response = ["status" => "error", "message" => "Gagal memperbarui status anggota"];
+    }
+    $stmt->close();
+
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit();
+}
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "delete_member_from_project") {
     $project_id = $_POST["project_id"];
     $member_id = $_POST["member_id"];
@@ -217,8 +349,161 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     exit();
 }
 
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "add_pembina") {
+    $coach_name = $_POST["coach_name"];
+    $enrollment_year = $_POST["enrollment_year"];
+    
+    $sql = "INSERT INTO coach (coach_name) VALUES (?)";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("s", $coach_name);
+    
+    if ($stmt->execute()) {
+        $coach_id = $stmt->insert_id;
+        $stmt->close();
+        
+        if (!empty($enrollment_year)) {
+            $sql_period = "INSERT INTO period (enrollment_year, coach_id) VALUES (?, ?)";
+            $stmt_period = $conn->prepare($sql_period);
+            $stmt_period->bind_param("ii", $enrollment_year, $coach_id);
+            $stmt_period->execute();
+            $stmt_period->close();
+        }
+        
+        $response = ["status" => "success", "message" => "Pembina berhasil ditambahkan"];
+    } else {
+        $response = ["status" => "error", "message" => "Gagal menambah pembina"];
+    }
+    
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit();
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "edit_pembina") {
+    $coach_id = $_POST["coach_id"];
+    $coach_name = $_POST["coach_name"];
+    $enrollment_year = $_POST["enrollment_year"];
+    $period_id = $_POST["period_id"];
+    
+    $sql = "UPDATE coach SET coach_name = ? WHERE coach_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("si", $coach_name, $coach_id);
+    
+    if ($stmt->execute()) {
+        $stmt->close();
+        
+        if (!empty($enrollment_year)) {
+            if (!empty($period_id)) {
+                $sql_period = "UPDATE period SET enrollment_year = ? WHERE period_id = ?";
+                $stmt_period = $conn->prepare($sql_period);
+                $stmt_period->bind_param("ii", $enrollment_year, $period_id);
+                $stmt_period->execute();
+                $stmt_period->close();
+            } else {
+                $sql_period = "INSERT INTO period (enrollment_year, coach_id) VALUES (?, ?)";
+                $stmt_period = $conn->prepare($sql_period);
+                $stmt_period->bind_param("ii", $enrollment_year, $coach_id);
+                $stmt_period->execute();
+                $stmt_period->close();
+            }
+        }
+        
+        $response = ["status" => "success", "message" => "Pembina berhasil diperbarui"];
+    } else {
+        $response = ["status" => "error", "message" => "Gagal memperbarui pembina"];
+    }
+    
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit();
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "delete_pembina") {
+    $coach_id = $_POST["coach_id"];
+    
+    $sql = "DELETE FROM coach WHERE coach_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $coach_id);
+    
+    if ($stmt->execute()) {
+        $response = ["status" => "success", "message" => "Pembina berhasil dihapus"];
+    } else {
+        $response = ["status" => "error", "message" => "Gagal menghapus pembina"];
+    }
+    $stmt->close();
+    
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit();
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "add_pengurus") {
+    $member_id = $_POST["member_id"];
+    $position_id = $_POST["position_id"];
+    $period_id = $_POST["period_id"];
+    
+    $sql = "INSERT INTO supervisor (member_id, position_id, period_id) VALUES (?, ?, ?)";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("iii", $member_id, $position_id, $period_id);
+    
+    if ($stmt->execute()) {
+        $response = ["status" => "success", "message" => "Pengurus berhasil ditambahkan"];
+    } else {
+        $response = ["status" => "error", "message" => "Gagal menambah pengurus"];
+    }
+    $stmt->close();
+    
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit();
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "edit_pengurus") {
+    $supervisor_id = $_POST["supervisor_id"];
+    $member_id = $_POST["member_id"];
+    $position_id = $_POST["position_id"];
+    $period_id = $_POST["period_id"];
+    
+    $sql = "UPDATE supervisor SET member_id = ?, position_id = ?, period_id = ? WHERE supervisor_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("iiii", $member_id, $position_id, $period_id, $supervisor_id);
+    
+    if ($stmt->execute()) {
+        $response = ["status" => "success", "message" => "Pengurus berhasil diperbarui"];
+    } else {
+        $response = ["status" => "error", "message" => "Gagal memperbarui pengurus"];
+    }
+    $stmt->close();
+    
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit();
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "delete_pengurus") {
+    $supervisor_id = $_POST["supervisor_id"];
+    
+    $sql = "DELETE FROM supervisor WHERE supervisor_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $supervisor_id);
+    
+    if ($stmt->execute()) {
+        $response = ["status" => "success", "message" => "Pengurus berhasil dihapus"];
+    } else {
+        $response = ["status" => "error", "message" => "Gagal menghapus pengurus"];
+    }
+    $stmt->close();
+    
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit();
+}
+
 $members = getAnggota($conn);
 $projects = getUniqueProyek($conn);
+$pembina = getPembinaWithPeriod($conn);
+$pengurus = getPengurus($conn);
+$positions = getPositions($conn);
 ?>
 
 <!DOCTYPE html>
@@ -707,6 +992,20 @@ $projects = getUniqueProyek($conn);
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
+        /* Override select text color to ensure dropdown text is visible */
+        .form-group select {
+            color: #000000;
+        }
+
+        .form-group select option {
+            color: #000000;
+            background: #ffffff;
+        }
+
+        .form-group select:focus {
+            color: #000000;
+        }
+
         .form-group input::placeholder {
             color: rgba(255, 255, 255, 0.5);
         }
@@ -971,7 +1270,7 @@ $projects = getUniqueProyek($conn);
             <h1>KIR - Karya Ilmiah Remaja</h1>
             <div class="header-info">
                 <div class="user-info">
-                    Selamat datang, <strong><?php echo htmlspecialchars($_SESSION["username"]); ?></strong> (<?php echo htmlspecialchars($_SESSION["role"]); ?>)
+                    Selamat datang, <strong> <?php echo htmlspecialchars($_SESSION["username"] ?? 'Guest'); ?> </strong> (<?php echo htmlspecialchars($_SESSION["role"] ?? 'No Role'); ?>)
                 </div>
                 <a href="logout.php" class="logout-btn">Keluar</a>
             </div>
@@ -980,6 +1279,12 @@ $projects = getUniqueProyek($conn);
         <div class="nav-bar">
             <button class="nav-item <?php echo ($current_page == 'anggota') ? 'active' : ''; ?>" data-page="anggota">
                 Anggota
+            </button>
+            <button class="nav-item <?php echo ($current_page == 'pembina') ? 'active' : ''; ?>" data-page="pembina">
+                Pembina
+            </button>
+            <button class="nav-item <?php echo ($current_page == 'pengurus') ? 'active' : ''; ?>" data-page="pengurus">
+                Pengurus
             </button>
             <button class="nav-item <?php echo ($current_page == 'proyek') ? 'active' : ''; ?>" data-page="proyek">
                 Proyek
@@ -1033,6 +1338,147 @@ $projects = getUniqueProyek($conn);
                 </div>
             </div>
             
+            <div id="pembina-section" class="content-section <?php echo ($current_page == 'pembina') ? 'active' : ''; ?>">
+                <div class="section-header">
+                    <h2 class="section-title">Manajemen Pembina</h2>
+                    <button class="add-btn" onclick="openAddPembinaModal()">+ Tambah Pembina</button>
+                </div>
+                
+                <?php
+                    // Get the latest period year
+                    $latest_year = null;
+                    $latest_coach = null;
+                    foreach ($pembina as $coach) {
+                        if ($coach['enrollment_year'] !== null) {
+                            if ($latest_year === null || $coach['enrollment_year'] > $latest_year) {
+                                $latest_year = $coach['enrollment_year'];
+                                $latest_coach = $coach['coach_name'];
+                            }
+                        }
+                    }
+                ?>
+                
+                <?php if ($latest_coach && $latest_year): ?>
+                    <h3 style="margin-bottom: 20px; color: #333; font-size: 18px;">Pembina Tahun <?php echo htmlspecialchars($latest_year); ?>: <strong><?php echo htmlspecialchars($latest_coach); ?></strong></h3>
+                <?php endif; ?>
+                
+                <div class="table-wrapper">
+                    <?php if (empty($pembina)): ?>
+                        <div class="empty-state">
+                            <p>Belum ada data pembina</p>
+                        </div>
+                    <?php else: ?>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Nama Pembina</th>
+                                    <th>Tahun Periode</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php 
+                                $no = 1;
+                                $displayed_coaches = [];
+                                foreach ($pembina as $coach): 
+                                    if (!in_array($coach['coach_id'], $displayed_coaches)):
+                                        $displayed_coaches[] = $coach['coach_id'];
+                                ?>
+                                    <tr>
+                                        <td><?php echo $no++; ?></td>
+                                        <td><?php echo htmlspecialchars($coach['coach_name']); ?></td>
+                                        <td><?php echo !empty($coach['enrollment_year']) ? htmlspecialchars($coach['enrollment_year']) : '-'; ?></td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button class="edit-btn" onclick="openEditPembinaModal(<?php echo htmlspecialchars(json_encode($coach)); ?>)">Edit</button>
+                                                <button class="delete-btn" onclick="openDeleteConfirm('pembina', <?php echo $coach['coach_id']; ?>, '<?php echo htmlspecialchars($coach['coach_name']); ?>')">Hapus</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php 
+                                    endif;
+                                endforeach; 
+                                ?>
+                            </tbody>
+                        </table>
+                    <?php endif; ?>
+                </div>
+            </div>
+            
+            <div id="pengurus-section" class="content-section <?php echo ($current_page == 'pengurus') ? 'active' : ''; ?>">
+                <div class="section-header">
+                    <h2 class="section-title">Manajemen Pengurus</h2>
+                    <button class="add-btn" onclick="openAddPengurusModal()">+ Tambah Pengurus</button>
+                </div>
+                
+                <?php
+                    // Get the latest period year and pengurus for that year
+                    $latest_pengurus_year = null;
+                    $pengurus_by_year = [];
+                    
+                    foreach ($pengurus as $p) {
+                        if ($p['enrollment_year'] !== null) {
+                            if (!isset($pengurus_by_year[$p['enrollment_year']])) {
+                                $pengurus_by_year[$p['enrollment_year']] = [];
+                            }
+                            $pengurus_by_year[$p['enrollment_year']][] = $p;
+                            
+                            if ($latest_pengurus_year === null || $p['enrollment_year'] > $latest_pengurus_year) {
+                                $latest_pengurus_year = $p['enrollment_year'];
+                            }
+                        }
+                    }
+                ?>
+                
+                <?php if ($latest_pengurus_year && isset($pengurus_by_year[$latest_pengurus_year])): ?>
+                    <h4 style="margin-bottom: 15px; color: #333; font-size: 16px;">Pengurus Tahun <?php echo htmlspecialchars($latest_pengurus_year); ?>:</h4>
+                    <div style="margin-bottom: 25px; padding: 10px 0;">
+                        <?php foreach ($pengurus_by_year[$latest_pengurus_year] as $p): ?>
+                            <div style="padding: 8px 0; color: #555;">
+                                <strong><?php echo htmlspecialchars($p['name']); ?></strong> - <?php echo htmlspecialchars(mapServingAs($p['serving_as'])); ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+                
+                <div class="table-wrapper">
+                    <?php if (empty($pengurus)): ?>
+                        <div class="empty-state">
+                            <p>Belum ada data pengurus</p>
+                        </div>
+                    <?php else: ?>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Nama Pengurus</th>
+                                    <th>Jabatan</th>
+                                    <th>Tahun Periode</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php $no = 1; foreach ($pengurus as $p): ?>
+                                    <tr>
+                                        <td><?php echo $no++; ?></td>
+                                        <td><?php echo htmlspecialchars($p['name']); ?></td>
+                                        <td><?php echo htmlspecialchars(mapServingAs($p['serving_as'])); ?></td>
+                                        <td><?php echo !empty($p['enrollment_year']) ? htmlspecialchars($p['enrollment_year']) : '-'; ?></td>
+                                        <td>
+                                            <div class="action-buttons">
+                                                <button class="edit-btn" onclick="openEditPengurusModal(<?php echo htmlspecialchars(json_encode($p)); ?>)">Edit</button>
+                                                <button class="delete-btn" onclick="openDeleteConfirm('pengurus', <?php echo $p['supervisor_id']; ?>, '<?php echo htmlspecialchars($p['name']); ?>')">Hapus</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    <?php endif; ?>
+                </div>
+            </div>
+            
             <div id="proyek-section" class="content-section <?php echo ($current_page == 'proyek') ? 'active' : ''; ?>">
                 <div class="section-header">
                     <h2 class="section-title">Manajemen Proyek</h2>
@@ -1066,8 +1512,8 @@ $projects = getUniqueProyek($conn);
                                         <td><?php echo date('d-m-Y', strtotime($project['project_date'])); ?></td>
                                         <td><?php echo htmlspecialchars($project['project_name']); ?></td>
                                         <td>
-                                            <span style="padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; <?php echo ($project['status'] == 'done') ? 'background-color: #d4edda; color: #155724;' : 'background-color: #fff3cd; color: #856404;'; ?>">
-                                                <?php echo ucfirst($project['status']); ?>
+                                            <span style="padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; <?php echo ($project['status'] == 1) ? 'background-color: #d4edda; color: #155724;' : 'background-color: #fff3cd; color: #856404;'; ?>">
+                                                <?php echo ($project['status'] == 1) ? 'Selesai' : 'Belum Selesai'; ?>
                                             </span>
                                         </td>
                                         <td>
@@ -1078,27 +1524,52 @@ $projects = getUniqueProyek($conn);
                                         </td>
                                     </tr>
                                     
-                                    <?php foreach ($projectMembers as $member): ?>
-                                        <tr class="member-expanded-row expanded-row" data-project-id="<?php echo $project['project_id']; ?>" style="display: none;">
-                                            <td colspan="5">
-                                                <div style="padding: 15px; background-color: #f8f9fa; margin: 0 -15px; border-left: 4px solid #667eea;">
-                                                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                                                        <div style="flex: 1;">
-                                                            <div style="font-weight: 600; color: #333; margin-bottom: 5px;">
-                                                                <?php echo htmlspecialchars($member['name']); ?>
-                                                            </div>
-                                                            <div style="color: #666; font-size: 13px;">
-                                                                Kelas: <?php echo htmlspecialchars($member['class']); ?> | Tahun Masuk: <?php echo date('d-m-Y', strtotime($member['enrollment_date'])); ?>
-                                                            </div>
-                                                        </div>
-                                                        <div class="action-buttons">
-                                                            <button class="delete-btn" onclick="openDeleteConfirm('member_from_project', <?php echo $project['project_id']; ?>, '<?php echo htmlspecialchars($member['name']); ?>', <?php echo $member['member_id']; ?>)">Hapus dari Proyek</button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
+                                    <tr class="member-expanded-row expanded-row" data-project-id="<?php echo $project['project_id']; ?>" style="display: none;">
+                                        <td colspan="5">
+                                            <div style="padding: 10px; background-color: #f8f9fa; margin: 0 -15px; border-left: 4px solid #667eea;">
+                                                <table style="width:100%; border-collapse: collapse;">
+                                                    <thead>
+                                                        <tr>
+                                                            <th style="width:50%; text-align:left; padding:8px;">Selesai</th>
+                                                            <th style="width:50%; text-align:left; padding:8px;">Belum Selesai</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td style="vertical-align:top; padding:8px;">
+                                                                <?php foreach ($projectMembers as $m): if ($m['member_status'] == 1): ?>
+                                                                    <div style="padding:6px 0; display:flex; justify-content:space-between; align-items:center;">
+                                                                        <div>
+                                                                            <div style="font-weight:600; color:#333"><?php echo htmlspecialchars($m['name']); ?></div>
+                                                                            <div style="color:#666; font-size:13px;">Kelas: <?php echo htmlspecialchars($m['class']); ?></div>
+                                                                        </div>
+                                                                        <div style="display:flex; gap:8px;">
+                                                                            <button class="btn-toggle" onclick="setMemberStatus(<?php echo $project['project_id']; ?>, <?php echo $m['member_id']; ?>, 0)" style="background-color: #dc3545; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;">Belum Selesai</button>
+                                                                            <button class="delete-btn" onclick="openDeleteConfirm('member_from_project', <?php echo $project['project_id']; ?>, '<?php echo htmlspecialchars($m['name']); ?>', <?php echo $m['member_id']; ?>)">Hapus</button>
+                                                                        </div>
+                                                                    </div>
+                                                                <?php endif; endforeach; ?>
+                                                            </td>
+                                                            <td style="vertical-align:top; padding:8px;">
+                                                                <?php foreach ($projectMembers as $m): if ($m['member_status'] != 1): ?>
+                                                                    <div style="padding:6px 0; display:flex; justify-content:space-between; align-items:center;">
+                                                                        <div>
+                                                                            <div style="font-weight:600; color:#333"><?php echo htmlspecialchars($m['name']); ?></div>
+                                                                            <div style="color:#666; font-size:13px;">Kelas: <?php echo htmlspecialchars($m['class']); ?></div>
+                                                                        </div>
+                                                                        <div style="display:flex; gap:8px;">
+                                                                            <button class="btn-toggle" onclick="setMemberStatus(<?php echo $project['project_id']; ?>, <?php echo $m['member_id']; ?>, 1)" style="background-color: #28a745; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500;">Selesai</button>
+                                                                            <button class="delete-btn" onclick="openDeleteConfirm('member_from_project', <?php echo $project['project_id']; ?>, '<?php echo htmlspecialchars($m['name']); ?>', <?php echo $m['member_id']; ?>)">Hapus</button>
+                                                                        </div>
+                                                                    </div>
+                                                                <?php endif; endforeach; ?>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
@@ -1141,6 +1612,91 @@ $projects = getUniqueProyek($conn);
         </div>
     </div>
     
+    <div id="pembinaModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="pembinaModalTitle">Tambah Pembina</h2>
+                <button class="close-btn" onclick="closePembinaModal()">&times;</button>
+            </div>
+            <form id="pembinaForm" onsubmit="submitPembinaForm(event)">
+                <input type="hidden" id="pembinaId" name="coach_id">
+                <input type="hidden" id="periodeId" name="period_id">
+                <input type="hidden" name="action" id="pembinaAction" value="add_pembina">
+                
+                <div class="form-group">
+                    <label for="pembinaName">Nama Pembina</label>
+                    <input type="text" id="pembinaName" name="coach_name" placeholder="Masukkan nama pembina" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pembinaYear">Tahun Periode</label>
+                    <input type="number" id="pembinaYear" name="enrollment_year" placeholder="Contoh: 2025" min="2000" max="2099">
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closePembinaModal()">Batal</button>
+                    <button type="submit" class="btn-submit">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="pengurusModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="pengurusModalTitle">Tambah Pengurus</h2>
+                <button class="close-btn" onclick="closePengurusModal()">&times;</button>
+            </div>
+            <form id="pengurusForm" onsubmit="submitPengurusForm(event)">
+                <input type="hidden" id="pengurusId" name="supervisor_id">
+                <input type="hidden" name="action" id="pengurusAction" value="add_pengurus">
+                
+                <div class="form-group">
+                    <label for="pengurusMember">Nama Pengurus</label>
+                    <select id="pengurusMember" name="member_id" required>
+                        <option value="">-- Pilih Anggota --</option>
+                        <?php foreach ($members as $member): ?>
+                            <option value="<?php echo $member['member_id']; ?>"><?php echo htmlspecialchars($member['name']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pengurusPosition">Jabatan</label>
+                    <select id="pengurusPosition" name="position_id" required>
+                        <option value="">-- Pilih Jabatan --</option>
+                        <?php foreach ($positions as $pos): ?>
+                            <option value="<?php echo $pos['position_id']; ?>"><?php echo htmlspecialchars(mapServingAs($pos['serving_as'])); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pengurusPeriod">Tahun Periode</label>
+                    <select id="pengurusPeriod" name="period_id" required>
+                        <option value="">-- Pilih Periode --</option>
+                        <?php 
+                        $unique_periods = [];
+                        foreach ($pembina as $coach) {
+                            if (!empty($coach['period_id']) && !in_array($coach['period_id'], $unique_periods)) {
+                                $unique_periods[] = $coach['period_id'];
+                        ?>
+                            <option value="<?php echo $coach['period_id']; ?>"><?php echo htmlspecialchars($coach['enrollment_year']); ?></option>
+                        <?php 
+                            }
+                        }
+                        ?>
+                    </select>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closePengurusModal()">Batal</button>
+                    <button type="submit" class="btn-submit">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
     <div id="projectModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1161,23 +1717,7 @@ $projects = getUniqueProyek($conn);
                     <input type="text" id="projectName" name="project_name" placeholder="Masukkan nama proyek" required>
                 </div>
                 
-                <div class="form-group">
-                    <label for="projectMember">Anggota</label>
-                    <select id="projectMember" name="member_id" required>
-                        <option value="">-- Pilih Anggota --</option>
-                        <?php foreach ($members as $member): ?>
-                            <option value="<?php echo $member['member_id']; ?>"><?php echo htmlspecialchars($member['name']); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="projectStatus">Status</label>
-                    <select id="projectStatus" name="status" required>
-                        <option value="undone">Belum Selesai</option>
-                        <option value="done">Selesai</option>
-                    </select>
-                </div>
+                <!-- Anggota dan status akan ditentukan setelah proyek dibuat -->
                 
                 <div class="modal-footer">
                     <button type="button" class="btn-cancel" onclick="closeProjectModal()">Batal</button>
@@ -1285,6 +1825,101 @@ $projects = getUniqueProyek($conn);
             });
         }
         
+        function openAddPembinaModal() {
+            document.getElementById('pembinaModalTitle').textContent = 'Tambah Pembina';
+            document.getElementById('pembinaAction').value = 'add_pembina';
+            document.getElementById('pembinaForm').reset();
+            document.getElementById('pembinaId').value = '';
+            document.getElementById('periodeId').value = '';
+            document.getElementById('pembinaModal').classList.add('show');
+        }
+        
+        function openEditPembinaModal(coach) {
+            document.getElementById('pembinaModalTitle').textContent = 'Edit Pembina';
+            document.getElementById('pembinaAction').value = 'edit_pembina';
+            document.getElementById('pembinaId').value = coach.coach_id;
+            document.getElementById('periodeId').value = coach.period_id || '';
+            document.getElementById('pembinaName').value = coach.coach_name;
+            document.getElementById('pembinaYear').value = coach.enrollment_year || '';
+            document.getElementById('pembinaModal').classList.add('show');
+        }
+        
+        function closePembinaModal() {
+            document.getElementById('pembinaModal').classList.remove('show');
+        }
+        
+        function submitPembinaForm(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(document.getElementById('pembinaForm'));
+            
+            fetch('dashboard.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showAlert('successAlert', data.message);
+                    closePembinaModal();
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert('errorAlert', data.message);
+                }
+            })
+            .catch(error => {
+                showAlert('errorAlert', 'Terjadi kesalahan');
+                console.error('Error:', error);
+            });
+        }
+        
+        function openAddPengurusModal() {
+            document.getElementById('pengurusModalTitle').textContent = 'Tambah Pengurus';
+            document.getElementById('pengurusAction').value = 'add_pengurus';
+            document.getElementById('pengurusForm').reset();
+            document.getElementById('pengurusId').value = '';
+            document.getElementById('pengurusModal').classList.add('show');
+        }
+        
+        function openEditPengurusModal(pengurus) {
+            document.getElementById('pengurusModalTitle').textContent = 'Edit Pengurus';
+            document.getElementById('pengurusAction').value = 'edit_pengurus';
+            document.getElementById('pengurusId').value = pengurus.supervisor_id;
+            document.getElementById('pengurusMember').value = pengurus.member_id;
+            document.getElementById('pengurusPosition').value = pengurus.position_id;
+            document.getElementById('pengurusPeriod').value = pengurus.period_id;
+            document.getElementById('pengurusModal').classList.add('show');
+        }
+        
+        function closePengurusModal() {
+            document.getElementById('pengurusModal').classList.remove('show');
+        }
+        
+        function submitPengurusForm(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(document.getElementById('pengurusForm'));
+            
+            fetch('dashboard.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showAlert('successAlert', data.message);
+                    closePengurusModal();
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert('errorAlert', data.message);
+                }
+            })
+            .catch(error => {
+                showAlert('errorAlert', 'Terjadi kesalahan');
+                console.error('Error:', error);
+            });
+        }
+        
         function openAddProjectModal() {
             document.getElementById('projectModalTitle').textContent = 'Tambah Proyek';
             document.getElementById('projectAction').value = 'add_project';
@@ -1299,7 +1934,6 @@ $projects = getUniqueProyek($conn);
             document.getElementById('projectId').value = project.project_id;
             document.getElementById('projectDate').value = project.project_date;
             document.getElementById('projectName').value = project.project_name;
-            document.getElementById('projectStatus').value = project.status;
             document.getElementById('projectModal').classList.add('show');
         }
         
@@ -1316,12 +1950,51 @@ $projects = getUniqueProyek($conn);
                 method: 'POST',
                 body: formData
             })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text();
+            })
+            .then(text => {
+                console.log('Response text:', text);
+                try {
+                    const data = JSON.parse(text);
+                    if (data.status === 'success') {
+                        showAlert('successAlert', data.message);
+                        closeProjectModal();
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showAlert('errorAlert', data.message);
+                    }
+                } catch (e) {
+                    console.error('JSON Parse error:', e);
+                    console.error('Response was:', text);
+                    showAlert('errorAlert', 'Terjadi kesalahan pada server');
+                }
+            })
+            .catch(error => {
+                showAlert('errorAlert', 'Terjadi kesalahan jaringan');
+                console.error('Fetch error:', error);
+            });
+        }
+
+        function setMemberStatus(projectId, memberId, status) {
+            const formData = new FormData();
+            formData.append('action', 'set_member_status');
+            formData.append('project_id', projectId);
+            formData.append('member_id', memberId);
+            formData.append('status', status);
+
+            fetch('dashboard.php', {
+                method: 'POST',
+                body: formData
+            })
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
                     showAlert('successAlert', data.message);
-                    closeProjectModal();
-                    setTimeout(() => location.reload(), 1500);
+                    setTimeout(() => location.reload(), 800);
                 } else {
                     showAlert('errorAlert', data.message);
                 }
@@ -1349,6 +2022,10 @@ $projects = getUniqueProyek($conn);
             
             if (deleteType === 'member') {
                 action = 'delete_member';
+            } else if (deleteType === 'pembina') {
+                action = 'delete_pembina';
+            } else if (deleteType === 'pengurus') {
+                action = 'delete_pengurus';
             } else if (deleteType === 'project') {
                 action = 'delete_project';
             } else if (deleteType === 'member_from_project') {
@@ -1360,6 +2037,10 @@ $projects = getUniqueProyek($conn);
             
             if (deleteType === 'member') {
                 formData.append('member_id', deleteId);
+            } else if (deleteType === 'pembina') {
+                formData.append('coach_id', deleteId);
+            } else if (deleteType === 'pengurus') {
+                formData.append('supervisor_id', deleteId);
             } else if (deleteType === 'project') {
                 formData.append('project_id', deleteId);
             } else if (deleteType === 'member_from_project') {
@@ -1399,11 +2080,19 @@ $projects = getUniqueProyek($conn);
         
         window.onclick = function(event) {
             const memberModal = document.getElementById('memberModal');
+            const pembinaModal = document.getElementById('pembinaModal');
+            const pengurusModal = document.getElementById('pengurusModal');
             const projectModal = document.getElementById('projectModal');
             const confirmModal = document.getElementById('confirmModal');
             
             if (event.target === memberModal) {
                 memberModal.classList.remove('show');
+            }
+            if (event.target === pembinaModal) {
+                pembinaModal.classList.remove('show');
+            }
+            if (event.target === pengurusModal) {
+                pengurusModal.classList.remove('show');
             }
             if (event.target === projectModal) {
                 projectModal.classList.remove('show');
