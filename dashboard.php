@@ -41,11 +41,13 @@ function getProyek($conn) {
 }
 
 function getUniqueProyek($conn) {
+    // status is stored per member, not per project; including it here caused
+    // duplicate rows when different members had different statuses.  We only
+    // need the basic project info for the main list.
     $sql = "SELECT DISTINCT 
             p.project_id, 
             p.project_date, 
-            p.project_name, 
-            p.status
+            p.project_name
             FROM project p
             ORDER BY p.project_id";
     $result = $conn->query($sql);
@@ -1497,7 +1499,7 @@ $positions = getPositions($conn);
                                     <th style="width: 40px;"></th>
                                     <th>Tanggal</th>
                                     <th>Nama Proyek</th>
-                                    <th>Status</th>
+                                    <!-- status column removed; status is now shown per-member inside expand -->
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
@@ -1511,11 +1513,7 @@ $positions = getPositions($conn);
                                         </td>
                                         <td><?php echo date('d-m-Y', strtotime($project['project_date'])); ?></td>
                                         <td><?php echo htmlspecialchars($project['project_name']); ?></td>
-                                        <td>
-                                            <span style="padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; <?php echo ($project['status'] == 1) ? 'background-color: #d4edda; color: #155724;' : 'background-color: #fff3cd; color: #856404;'; ?>">
-                                                <?php echo ($project['status'] == 1) ? 'Selesai' : 'Belum Selesai'; ?>
-                                            </span>
-                                        </td>
+                                        <!-- status indicator removed from main row; status is shown per-member inside the expanded details -->
                                         <td>
                                             <div class="action-buttons">
                                                 <button class="edit-btn" onclick="openEditProjectModal(<?php echo htmlspecialchars(json_encode($project)); ?>)">Edit</button>
