@@ -1,16 +1,7 @@
 <?php
 session_start();
 
-$host = "localhost";
-$username = "root";
-$password = "";
-$database = "aplikasi_pengelolaan_ekstrakurikuler_kir_esensial";
-
-$conn = new mysqli($host, $username, $password, $database);
-
-if ($conn->connect_error) {
-    die("Koneksi ke database gagal!: " . $conn->connect_error);
-}
+require 'config.php';
 
 $error_message = "";
 $success_message = "";
@@ -280,6 +271,138 @@ $conn->close();
 
         .login-footer p {
             letter-spacing: 0.3px;
+        }
+
+        /* Responsive Design for Tablets (768px and below) */
+        @media (max-width: 768px) {
+            .login-class {
+                width: 95%;
+                max-width: 500px;
+                padding: 40px 30px;
+                margin: 20px;
+            }
+
+            .login-header h1 {
+                font-size: 28px;
+            }
+
+            .login-header h2 {
+                font-size: 15px;
+            }
+
+            .form-group {
+                margin-bottom: 18px;
+            }
+
+            .form-group label {
+                font-size: 12px;
+            }
+
+            .form-group input {
+                padding: 12px 14px;
+                font-size: 13px;
+            }
+
+            .login-button {
+                padding: 12px;
+                font-size: 14px;
+            }
+
+            .login-footer {
+                margin-top: 25px;
+                font-size: 11px;
+            }
+        }
+
+        /* Responsive Design for Mobile Phones (480px and below) */
+        @media (max-width: 480px) {
+            .login-class {
+                width: 95%;
+                max-width: 100%;
+                padding: 35px 20px;
+                border-radius: 16px;
+            }
+
+            .login-header {
+                margin-bottom: 30px;
+            }
+
+            .login-header h1 {
+                font-size: 24px;
+                margin-bottom: 8px;
+            }
+
+            .login-header h2 {
+                font-size: 14px;
+            }
+
+            .form-group {
+                margin-bottom: 16px;
+            }
+
+            .form-group label {
+                font-size: 11px;
+                margin-bottom: 6px;
+            }
+
+            .form-group input {
+                padding: 11px 12px;
+                font-size: 14px;
+                border-radius: 10px;
+            }
+
+            .form-group input::placeholder {
+                font-size: 12px;
+            }
+
+            .login-button {
+                padding: 11px;
+                font-size: 13px;
+                margin-top: 8px;
+            }
+
+            .error-message,
+            .success-message {
+                padding: 12px 14px;
+                font-size: 12px;
+                margin-bottom: 18px;
+            }
+
+            .login-footer {
+                margin-top: 20px;
+                font-size: 10px;
+            }
+
+            body::before,
+            body::after {
+                width: 300px;
+                height: 300px;
+            }
+        }
+
+        /* Extra small devices (less than 380px) */
+        @media (max-width: 380px) {
+            .login-class {
+                padding: 30px 15px;
+            }
+
+            .login-header h1 {
+                font-size: 22px;
+            }
+
+            .login-header h2 {
+                font-size: 13px;
+            }
+
+            .form-group input {
+                padding: 10px 11px;
+                font-size: 13px;
+            }
+
+            .login-button {
+                padding: 10px;
+                font-size: 12px;
+            }
         }
     </style>
 </head>

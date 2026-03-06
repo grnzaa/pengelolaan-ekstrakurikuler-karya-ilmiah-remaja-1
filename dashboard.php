@@ -1,16 +1,7 @@
 <?php
 session_start();
 
-$host = "localhost";
-$username = "root";
-$password = "";
-$database = "aplikasi_pengelolaan_ekstrakurikuler_kir_esensial";
-
-$conn = new mysqli($host, $username, $password, $database);
-
-if ($conn->connect_error) {
-    die("Koneksi ke database gagal!: " . $conn->connect_error);
-}
+require 'config.php';
 
 if (!isset($_SESSION["user_id"])) {
     header("Location: login.php");
@@ -1263,6 +1254,329 @@ $positions = getPositions($conn);
         .empty-state p {
             font-size: 16px;
             margin-bottom: 20px;
+        }
+
+        /* Responsive Design for Tablets (768px and below) */
+        @media (max-width: 768px) {
+            .header {
+                padding: 20px;
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .header-info {
+                flex-direction: column;
+                gap: 15px;
+                width: 100%;
+            }
+
+            .user-info {
+                font-size: 12px;
+            }
+
+            .logout-btn {
+                padding: 8px 16px;
+                font-size: 12px;
+                width: 100%;
+            }
+
+            .nav-bar {
+                padding: 0;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .nav-item {
+                padding: 14px 20px;
+                font-size: 13px;
+                white-space: nowrap;
+                min-width: fit-content;
+            }
+
+            .main-content {
+                padding: 20px;
+                overflow-x: hidden;
+            }
+
+            .section-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .section-title {
+                font-size: 20px;
+            }
+
+            .add-btn {
+                width: 100%;
+                padding: 12px 20px;
+                font-size: 13px;
+            }
+
+            .table-wrapper {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            table {
+                min-width: 600px;
+            }
+
+            th, td {
+                padding: 12px 10px;
+                font-size: 12px;
+            }
+
+            .action-buttons {
+                gap: 5px;
+            }
+
+            .edit-btn, .delete-btn {
+                padding: 6px 10px;
+                font-size: 11px;
+            }
+
+            .modal-content {
+                width: 95%;
+                max-width: 450px;
+                padding: 25px 20px;
+            }
+
+            .modal-header h2 {
+                font-size: 18px;
+            }
+
+            .form-group input,
+            .form-group select {
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+
+            .modal-footer {
+                flex-direction: column-reverse;
+            }
+
+            .btn-submit, .btn-cancel {
+                width: 100%;
+                padding: 10px 15px;
+                font-size: 13px;
+            }
+
+            .confirm-modal-content {
+                width: 95%;
+                max-width: 350px;
+                padding: 20px 15px;
+            }
+
+            .btn-confirm, .btn-cancel-confirm {
+                flex: 1;
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+
+            .member-expanded-row {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .member-expanded-row table {
+                min-width: 100%;
+            }
+
+            .btn-toggle {
+                padding: 4px 8px;
+                font-size: 11px;
+            }
+        }
+
+        /* Responsive Design for Mobile Phones (480px and below) */
+        @media (max-width: 480px) {
+            .header {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+                letter-spacing: -0.5px;
+            }
+
+            .header-info {
+                gap: 10px;
+            }
+
+            .user-info {
+                font-size: 11px;
+            }
+
+            .nav-bar {
+                gap: 0;
+            }
+
+            .nav-item {
+                padding: 12px 15px;
+                font-size: 12px;
+            }
+
+            .main-content {
+                padding: 15px;
+            }
+
+            .section-title {
+                font-size: 18px;
+            }
+
+            .add-btn {
+                padding: 10px 15px;
+                font-size: 12px;
+            }
+
+            th, td {
+                padding: 10px 8px;
+                font-size: 11px;
+            }
+
+            table {
+                min-width: 500px;
+            }
+
+            .action-buttons {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+
+            .edit-btn, .delete-btn {
+                padding: 5px 8px;
+                font-size: 10px;
+                min-width: 50px;
+            }
+
+            .modal-content {
+                width: 95%;
+                max-width: 320px;
+                padding: 20px 15px;
+            }
+
+            .modal-header {
+                padding-bottom: 12px;
+                margin-bottom: 15px;
+            }
+
+            .modal-header h2 {
+                font-size: 16px;
+            }
+
+            .close-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 24px;
+            }
+
+            .form-group {
+                margin-bottom: 15px;
+            }
+
+            .form-group label {
+                font-size: 12px;
+                margin-bottom: 6px;
+            }
+
+            .form-group input,
+            .form-group select {
+                padding: 9px 10px;
+                font-size: 12px;
+            }
+
+            .modal-footer {
+                gap: 8px;
+            }
+
+            .btn-submit, .btn-cancel {
+                padding: 9px 12px;
+                font-size: 12px;
+            }
+
+            .confirm-modal-content {
+                width: 95%;
+                max-width: 280px;
+                padding: 18px 12px;
+            }
+
+            .confirm-modal-header h2 {
+                font-size: 15px;
+                margin-bottom: 12px;
+            }
+
+            .confirm-modal-body {
+                font-size: 13px;
+                margin-bottom: 18px;
+            }
+
+            .btn-confirm, .btn-cancel-confirm {
+                padding: 7px 12px;
+                font-size: 11px;
+            }
+
+            .expand-btn {
+                padding: 0 5px;
+                font-size: 16px;
+            }
+
+            .member-row-cell {
+                padding: 10px 8px !important;
+            }
+
+            .member-row-cell:first-child {
+                padding-left: 35px !important;
+            }
+
+            .empty-state {
+                padding: 40px 15px;
+            }
+
+            .empty-state p {
+                font-size: 14px;
+            }
+
+            h3 {
+                font-size: 14px;
+            }
+
+            h4 {
+                font-size: 13px;
+            }
+        }
+
+        /* Extra small devices (less than 380px) */
+        @media (max-width: 380px) {
+            .header h1 {
+                font-size: 18px;
+            }
+
+            .modal-content, .confirm-modal-content {
+                max-width: 100%;
+                width: 90%;
+                padding: 15px 12px;
+            }
+
+            .modal-header h2 {
+                font-size: 15px;
+            }
+
+            th, td {
+                padding: 8px 6px;
+                font-size: 10px;
+            }
+
+            .edit-btn, .delete-btn {
+                padding: 4px 6px;
+                font-size: 9px;
+            }
         }
     </style>
 </head>

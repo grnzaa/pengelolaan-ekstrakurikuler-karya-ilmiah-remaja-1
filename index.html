@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karya Ilmiah Remaja - SMKN 1 Pacitan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @keyframes floatAnimation {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
+            border-radius: 50%;
+            top: -100px;
+            left: -100px;
+            animation: floatAnimation 6s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(118, 75, 162, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            bottom: -150px;
+            right: -150px;
+            animation: floatAnimation 8s ease-in-out infinite reverse;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            color: rgba(0, 0, 0, 0.85);
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: slideInLeft 0.8s ease-out;
+        }
+
+        header p {
+            color: rgba(0, 0, 0, 0.6);
+            font-size: 18px;
+            font-weight: 500;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .content-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            max-width: 1100px;
+            width: 100%;
+            align-items: center;
+        }
+
+        .left-section {
+            animation: fadeIn 0.8s ease-out 0.2s backwards;
+        }
+
+        .left-section h2 {
+            color: rgba(0, 0, 0, 0.85);
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            letter-spacing: -0.5px;
+        }
+
+        .left-section p {
+            color: rgba(0, 0, 0, 0.7);
+            font-size: 15px;
+            line-height: 1.8;
+            margin-bottom: 25px;
+            text-align: justify;
+        }
+
+        .features {
+            list-style: none;
+            margin-bottom: 30px;
+        }
+
+        .features li {
+            color: rgba(0, 0, 0, 0.75);
+            font-size: 14px;
+            margin-bottom: 12px;
+            padding-left: 30px;
+            position: relative;
+            font-weight: 500;
+        }
+
+        .features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .right-section {
+            display: flex;
+            justify-content: center;
+            animation: fadeIn 0.8s ease-out 0.4s backwards;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 50px 40px;
+            border-radius: 20px;
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 60px rgba(31, 38, 135, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .card h3 {
+            color: rgba(0, 0, 0, 0.85);
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .card p {
+            color: rgba(0, 0, 0, 0.65);
+            font-size: 14px;
+            margin-bottom: 35px;
+            line-height: 1.6;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+            color: white;
+            border: 1.5px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.25);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .btn-login:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 1) 0%, rgba(118, 75, 162, 1) 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(102, 126, 234, 0.35);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-login:active {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.25);
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 20px;
+            color: rgba(0, 0, 0, 0.5);
+            font-size: 12px;
+            letter-spacing: 0.3px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        @media (max-width: 768px) {
+            .content-wrapper {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            header h1 {
+                font-size: 28px;
+            }
+
+            header p {
+                font-size: 16px;
+            }
+
+            .main-content {
+                padding: 40px 20px;
+            }
+
+            .left-section {
+                text-align: center;
+            }
+
+            .left-section h2 {
+                font-size: 24px;
+            }
+
+            .left-section p {
+                font-size: 14px;
+            }
+
+            .features li {
+                font-size: 13px;
+            }
+
+            .card {
+                padding: 35px 25px;
+            }
+
+            .card h3 {
+                font-size: 20px;
+            }
+
+            .card p {
+                font-size: 13px;
+            }
+
+            .btn-login {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+
+            footer {
+                padding: 25px 20px;
+                font-size: 11px;
+            }
+        }
+
+        /* Responsive Design for Mobile Phones (480px and below) */
+        @media (max-width: 480px) {
+            body {
+                background-attachment: scroll;
+            }
+
+            .container {
+                display: flex;
+                flex-direction: column;
+                min-height: 100vh;
+            }
+
+            header {
+                padding: 20px;
+                text-align: center;
+            }
+
+            header h1 {
+                font-size: 22px;
+                letter-spacing: -0.5px;
+            }
+
+            header p {
+                font-size: 14px;
+            }
+
+            .main-content {
+                flex: 1;
+                padding: 30px 15px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .content-wrapper {
+                width: 100%;
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .left-section {
+                text-align: center;
+            }
+
+            .left-section h2 {
+                font-size: 20px;
+                margin-bottom: 15px;
+            }
+
+            .left-section p {
+                font-size: 13px;
+                line-height: 1.6;
+                margin-bottom: 20px;
+                text-align: center;
+            }
+
+            .features {
+                margin-bottom: 20px;
+            }
+
+            .features li {
+                font-size: 12px;
+                margin-bottom: 10px;
+                padding-left: 25px;
+            }
+
+            .features li::before {
+                font-size: 16px;
+            }
+
+            .right-section {
+                width: 100%;
+            }
+
+            .card {
+                padding: 30px 20px;
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .card h3 {
+                font-size: 18px;
+                margin-bottom: 12px;
+            }
+
+            .card p {
+                font-size: 12px;
+                margin-bottom: 25px;
+                line-height: 1.5;
+            }
+
+            .btn-login {
+                padding: 11px 18px;
+                font-size: 13px;
+            }
+
+            .btn-login:hover {
+                transform: translateY(-2px);
+            }
+
+            footer {
+                padding: 20px 15px;
+                font-size: 10px;
+            }
+
+            body::before,
+            body::after {
+                display: none;
+            }
+        }
+
+        /* Extra small devices (less than 380px) */
+        @media (max-width: 380px) {
+            header h1 {
+                font-size: 20px;
+            }
+
+            header p {
+                font-size: 13px;
+            }
+
+            .main-content {
+                padding: 20px 12px;
+            }
+
+            .left-section h2 {
+                font-size: 18px;
+            }
+
+            .left-section p {
+                font-size: 12px;
+            }
+
+            .card {
+                padding: 25px 15px;
+            }
+
+            .card h3 {
+                font-size: 16px;
+            }
+
+            .card p {
+                font-size: 11px;
+            }
+
+            .btn-login {
+                padding: 10px 15px;
+                font-size: 12px;
+            }
+
+            .features li {
+                font-size: 11px;
+                padding-left: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Karya Ilmiah Remaja</h1>
+            <p>SMKN 1 Pacitan</p>
+        </header>
+
+        <div class="main-content">
+            <div class="content-wrapper">
+                <div class="left-section">
+                    <h2>Kelola Proyek KIR Anda</h2>
+                    <p>Sistem manajemen Karya Ilmiah Remaja yang dirancang khusus untuk memudahkan pengelolaan anggota, pembina, pengurus, dan proyek penelitian di SMKN 1 Pacitan.</p>
+                    
+                    <ul class="features">
+                        <li>Manajemen Data Anggota</li>
+                        <li>Kelola Data Pembina dan Pengurus</li>
+                        <li>Pantau Status Proyek</li>
+                        <li>Tracking Progres Anggota</li>
+                        <li>Interface yang Intuitif dan Mudah Digunakan</li>
+                        <li>Keamanan Data Terjamin</li>
+                    </ul>
+                </div>
+
+                <div class="right-section">
+                    <div class="card">
+                        <h3>Masuk ke Dashboard</h3>
+                        <p>Silakan login dengan akun Anda untuk mengakses aplikasi manajemen KIR</p>
+                        <a href="login.php" class="btn-login">Masuk Sekarang</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 KIR SMKN 1 Pacitan. All Rights Reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>
